@@ -1,8 +1,12 @@
 import { Injectable } from '@angular/core';
 
+export type InternalStateType = {
+  [key: string]: any
+};
+
 @Injectable()
 export class AppState {
-  _state = { };
+  _state: InternalStateType = { };
 
   constructor() {
 
@@ -30,7 +34,7 @@ export class AppState {
   }
 
 
-  _clone(object) {
+  private _clone(object: InternalStateType) {
     // simple object clone
     return JSON.parse(JSON.stringify( object ));
   }

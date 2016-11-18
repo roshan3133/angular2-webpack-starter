@@ -1,39 +1,62 @@
-import { Component } from '@angular/core';
-
-import { AppState } from '../app.service';
-import { Title } from './title';
-import { XLarge } from './x-large';
+import { Component, OnInit } from '@angular/core';
+import { Http, Response } from '@angular/http';
+import { AuthenticationService } from '../authentication';
+import { Router } from '@angular/router';
+import { NavbarComponent } from  '../navbar';
+import { WebService } from '../webservices';
 
 @Component({
-  // The selector is what angular internally uses
-  // for `document.querySelectorAll(selector)` in our index.html
-  // where, in this case, selector is the string 'home'
-  selector: 'home',  // <home></home>
-  // We need to tell Angular's Dependency Injection which providers are in our app.
-  providers: [
-    Title
-  ],
-  // Our list of styles in our component. We may add more to compose many styles together
-  styleUrls: [ './home.component.css' ],
-  // Every Angular template is first compiled by the browser before Angular runs it's compiler
-  templateUrl: './home.component.html'
+  selector: 'home',
+  templateUrl: './home.component.html',
+  styleUrls: ['./home.component.css'],
+  providers: [WebService, AuthenticationService]
 })
-export class HomeComponent {
-  // Set our default values
-  localState = { value: '' };
-  // TypeScript public modifiers
-  constructor(public appState: AppState, public title: Title) {
+export class HomeComponent implements OnInit {
 
+  heroes = [];
+  constructor(private http: Http, private router: Router,
+    private webservice: WebService) {
   }
 
   ngOnInit() {
-    console.log('hello `Home` component');
-    // this.title.getData().subscribe(data => this.data = data);
+    this.webservice.isAuthenticated();
   }
 
-  submitState(value: string) {
-    console.log('submitState', value);
-    this.appState.set('value', value);
-    this.localState.value = '';
+  ngOnDestroy() {
+    // Will clear when component is destroyed e.g. route is navigated away from.
+  }
+
+  public clear() {
+    this.heroes = [];
+  }
+
+  /**
+   * Fetch the data from the python-flask backend
+   */
+  public getData() {
+    this.webservice.getDataFromBackend()
+      .subscribe(
+      data => this.handleData(data),
+      err => this.logError(err),
+      () => console.log('got data')
+      );
+  }
+  private handleData(data: Response) {
+    if (data.status === 200) {
+      let receivedData = data.json();
+      this.heroes = receivedData['Heroes'];
+    }
+    console.log(data.json());
+  }
+
+
+  private logError(err: Response) {
+    console.log('There was an error: ' + err.status);
+    if (err.status === 0) {
+      console.error('Seems server is down');
+    }
+    if (err.status === 401) {
+      this.router.navigate(['/sessionexpired']);
+    }
   }
 }
